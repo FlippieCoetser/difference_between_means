@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Fira Code';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./font/Fira.woff) format('woff');
+}
+
 code {
   font-family: 'Fira Code';
 }
