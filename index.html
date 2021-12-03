@@ -173,8 +173,9 @@ pre code {
 
 
 <blockquote>
-<p><strong>Note:</strong> this code is a direct copy of Dr Juan Klopper youtube video (<a href="https://www.youtube.com/watch?v=XRrx95pc_Pw">link</a>) and intended for educational purposes only. Obvious and notable differences includes code written in R and added math equations.</p>
+<p><strong>Note:</strong> this code is a direct copy of Dr Juan Klopper youtube video (<a href="https://www.youtube.com/watch?v=XRrx95pc_Pw">link</a>) and intended for educational purposes only. Obvious and notable differences includes code written in R.</p>
 </blockquote>
+<p>TODO: Added math equations, additional information and update aesthetics.</p>
 <div id="resampling-under-the-null-hypothesis" class="section level1">
 <h1>Resampling under the null hypothesis</h1>
 <div id="in-this-tutiorial" class="section level2">
@@ -182,14 +183,14 @@ pre code {
 <ul>
 <li>Seeding the pseudo-random number generator for reproducible results</li>
 <li>Creating a Dataframe</li>
-<li>Sample from a set of categorical values using xxx</li>
-<li>Sample from a normal distribution using xxx</li>
+<li>Sample from a set of categorical values using sample function</li>
+<li>Sample from a normal distribution using rnorm function</li>
 <li>Making sub-DataFrames using the filter function (conditional selection)</li>
-<li>Extracting vectors from DataFrames</li>
-<li>Summary statistics of a continuous numerical variable using xxx</li>
-<li>Histogram using xxx</li>
-<li>Shuffle a vector</li>
-<li>Calculate a p-value using xxx</li>
+<li>Extracting vectors from DataFrames using dplyr</li>
+<li>Summary statistics of a continuous numerical variable using summary function</li>
+<li>Histogram using ggplot</li>
+<li>Shuffle a vector sample function</li>
+<li>Calculate a p-value using t.test function</li>
 </ul>
 </div>
 <div id="packages" class="section level2">
@@ -219,9 +220,10 @@ mass_sd &lt;- 10</code></pre>
 </div>
 <div id="sample-data-sets" class="section level2">
 <h2>Sample Data Sets</h2>
+<p>Extract two sample data sets from population based on group</p>
 <pre class="r"><code>group_I &lt;- df |&gt; filter(Group == &#39;I&#39;)
 group_II &lt;- df |&gt; filter(Group == &#39;II&#39;)</code></pre>
-<p>Extract Vectors from dataframe</p>
+<p>Extract Vectors from sample data sets</p>
 <pre class="r"><code>mass &lt;- df[[&#39;Mass&#39;]]
 
 mass_I &lt;- group_I[[&#39;Mass&#39;]]
@@ -232,14 +234,14 @@ n_II &lt;- length(mass_II)</code></pre>
 </div>
 <div id="descriptive-statistics" class="section level2">
 <h2>Descriptive Statistics</h2>
-<div id="sample-i" class="section level3">
-<h3>Sample I</h3>
+<div id="sample-data-set-i" class="section level3">
+<h3>Sample Data Set I</h3>
 <pre class="r"><code>summary(mass_I)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 ##   73.35   93.39  100.44  100.50  107.34  131.92</code></pre>
 </div>
-<div id="sample-ii" class="section level3">
-<h3>Sample II</h3>
+<div id="sample-data-ii" class="section level3">
+<h3>Sample Data II</h3>
 <pre class="r"><code>summary(mass_II)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 ##   69.54   93.15   99.69   99.58  105.55  129.38</code></pre>
@@ -247,6 +249,7 @@ n_II &lt;- length(mass_II)</code></pre>
 </div>
 <div id="data-visualization" class="section level2">
 <h2>Data Visualization</h2>
+<p>Plot histogram of both sample data sets overlayd on top of each other</p>
 <pre class="r"><code>ggplot(df, aes(
   x=Mass, 
   fill=Group)) + 
@@ -258,20 +261,44 @@ n_II &lt;- length(mass_II)</code></pre>
 </div>
 <div id="difference-in-means-test-statistic" class="section level2">
 <h2>Difference in means (test statistic)</h2>
-<pre class="r"><code>difference_in_means = mean(mass_I) - mean(mass_II)</code></pre>
+<pre class="r"><code>difference_in_means &lt;- mean(mass_I) - mean(mass_II)</code></pre>
 </div>
 <div id="reassignment-under-the-null-hypothesis" class="section level2">
 <h2>Reassignment under the null hypothesis</h2>
+<p>Use random samples extracted from the population data set to generate an entire spectrum of differences between mean values</p>
 <pre class="r"><code>means &lt;- c()
-resamples = 3
+resamples &lt;- 5000
 
 for (i in 1:resamples ) {
-  
-  print(i)
+  shuffled_mass &lt;- sample(mass)
+  new_group_I &lt;- shuffled_mass[1:n_I]
+  new_group_II &lt;- shuffled_mass[(n_I + 1):n]
+  new_difference_in_means = mean(new_group_I) - mean(new_group_II)
+  means &lt;- means |&gt; append(new_difference_in_means)
 }</code></pre>
-<pre><code>## [1] 1
-## [1] 2
-## [1] 3</code></pre>
+<p>Plot spectrum of differences between mean values</p>
+<pre class="r"><code>ggplot(mapping = aes(means)) + 
+  geom_histogram(
+    position = &quot;identity&quot;,
+    alpha=0.5, 
+    bins = 30)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+</div>
+<div id="probablity-of-difference-in-means" class="section level2">
+<h2>Probablity of difference in means</h2>
+<p>p-value of the difference between the two mean values of <strong>mass_I</strong> and <strong>mass_II</strong> sample data sets ### Manually calculated</p>
+<pre class="r"><code>qty_smaller_than_difference &lt;- length(means[means &lt; -difference_in_means])
+qty_bigger_than_difference &lt;- length(means[means &gt; difference_in_means])
+
+p_value.manual &lt;- (qty_smaller_than_difference + qty_bigger_than_difference) / resamples
+print(round(p_value.manual,4))</code></pre>
+<pre><code>## [1] 0.1476</code></pre>
+<div id="calculated-using-equal-variance-t-test-function" class="section level3">
+<h3>Calculated using Equal Variance T-Test function</h3>
+<pre class="r"><code>p_value.package &lt;- t.test(mass_I, mass_II, alternative = &quot;two.sided&quot;, var.equal = FALSE)[[&#39;p.value&#39;]]
+print(round(p_value.package,4))</code></pre>
+<pre><code>## [1] 0.1492</code></pre>
+</div>
 </div>
 </div>
 

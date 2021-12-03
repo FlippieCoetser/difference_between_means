@@ -13,7 +13,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-> **Note:** this code is a direct copy of Dr Juan Klopper youtube video ([link](https://www.youtube.com/watch?v=XRrx95pc_Pw)) and intended for educational purposes only. Obvious and notable differences includes code written in R and added math equations.
+> **Note:** this code is a direct copy of Dr Juan Klopper youtube video ([link](https://www.youtube.com/watch?v=XRrx95pc_Pw)) and intended for educational purposes only. Obvious and notable differences includes code written in R.
+
+TODO: Added math equations, additional information and update aesthetics.
 
 
 # Resampling under the null hypothesis
@@ -22,14 +24,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 - Seeding the pseudo-random number generator for reproducible results
 - Creating a Dataframe
-- Sample from a set of categorical values using  xxx
-- Sample from a normal distribution using xxx
+- Sample from a set of categorical values using sample function
+- Sample from a normal distribution using rnorm function
 - Making sub-DataFrames using the filter function (conditional selection)
-- Extracting vectors from DataFrames
-- Summary statistics of a continuous numerical variable using xxx
-- Histogram using xxx
-- Shuffle a vector
-- Calculate a p-value using xxx
+- Extracting vectors from DataFrames using dplyr
+- Summary statistics of a continuous numerical variable using summary function
+- Histogram using ggplot
+- Shuffle a vector sample function
+- Calculate a p-value using t.test function
 
 ## Packages
 
@@ -70,13 +72,13 @@ df <- data.frame(
 
 ## Sample Data Sets
 
+Extract two sample data sets from population based on group
 ```{r}
 group_I <- df |> filter(Group == 'I')
 group_II <- df |> filter(Group == 'II')
 ```
 
-Extract Vectors from dataframe 
-
+Extract Vectors from sample data sets 
 ```{r}
 mass <- df[['Mass']]
 
@@ -89,18 +91,17 @@ n_II <- length(mass_II)
 
 
 ## Descriptive Statistics
-### Sample I
-
+### Sample Data Set I
 ```{r}
 summary(mass_I)
 ```
-### Sample II
+### Sample Data II
 ```{r}
 summary(mass_II)
 ```
 
 ## Data Visualization
-
+Plot histogram of both sample data sets overlayd on top of each other
 ```{r}
 ggplot(df, aes(
   x=Mass, 
@@ -113,20 +114,47 @@ ggplot(df, aes(
 
 ## Difference in means (test statistic)
 ```{r}
-difference_in_means = mean(mass_I) - mean(mass_II)
+difference_in_means <- mean(mass_I) - mean(mass_II)
 ```
 
 ## Reassignment under the null hypothesis
-
+Use random samples extracted from the population data set to generate an entire spectrum of differences between mean values 
 ```{r}
 means <- c()
-resamples = 3
+resamples <- 5000
 
 for (i in 1:resamples ) {
-  
-  print(i)
+  shuffled_mass <- sample(mass)
+  new_group_I <- shuffled_mass[1:n_I]
+  new_group_II <- shuffled_mass[(n_I + 1):n]
+  new_difference_in_means = mean(new_group_I) - mean(new_group_II)
+  means <- means |> append(new_difference_in_means)
 }
 ```
 
+Plot spectrum of differences between mean values
+```{r}
+ggplot(mapping = aes(means)) + 
+  geom_histogram(
+    position = "identity",
+    alpha=0.5, 
+    bins = 30)
+```
 
+## Probablity of difference in means
+p-value of the difference between the two mean values of **mass_I** and **mass_II** sample data sets
+### Manually calculated
+```{r}
+qty_smaller_than_difference <- length(means[means < -difference_in_means])
+qty_bigger_than_difference <- length(means[means > difference_in_means])
+
+p_value.manual <- (qty_smaller_than_difference + qty_bigger_than_difference) / resamples
+print(round(p_value.manual,4))
+```
+
+### Calculated using Equal Variance T-Test function
+```{r}
+p_value.package <- t.test(mass_I, mass_II, alternative = "two.sided", var.equal = FALSE)[['p.value']]
+print(round(p_value.package,4))
+```
 
