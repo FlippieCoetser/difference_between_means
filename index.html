@@ -173,132 +173,105 @@ pre code {
 
 
 <blockquote>
-<p><strong>Note:</strong> this code is a direct copy of Dr Juan Klopper youtube video (<a href="https://www.youtube.com/watch?v=XRrx95pc_Pw">link</a>) and intended for educational purposes only. Obvious and notable differences includes code written in R.</p>
+<p><strong>Note:</strong> This article is based on a youtube video tutorial made by <a href="https://www.linkedin.com/in/juanklopper/">Dr Juan Klopper</a>. In the <a href="https://www.youtube.com/watch?v=XRrx95pc_Pw">tutorial</a> Juan illustrate how one can estimate a p-value for the difference in means between two groups using <strong>Julia</strong>. Obvious and notable differences in this post includes code written in R.</p>
 </blockquote>
 <p>TODO: Added math equations, additional information and update aesthetics.</p>
-<div id="resampling-under-the-null-hypothesis" class="section level1">
-<h1>Resampling under the null hypothesis</h1>
-<div id="in-this-tutiorial" class="section level2">
-<h2>In this tutiorial</h2>
-<ul>
-<li>Seeding the pseudo-random number generator for reproducible results</li>
-<li>Creating a Dataframe</li>
-<li>Sample from a set of categorical values using sample function</li>
-<li>Sample from a normal distribution using rnorm function</li>
-<li>Making sub-DataFrames using the filter function (conditional selection)</li>
-<li>Extracting vectors from DataFrames using dplyr</li>
-<li>Summary statistics of a continuous numerical variable using summary function</li>
-<li>Histogram using ggplot</li>
-<li>Shuffle a vector sample function</li>
-<li>Calculate a p-value using t.test function</li>
-</ul>
-</div>
 <div id="packages" class="section level2">
 <h2>Packages</h2>
 <pre class="r"><code>library(dplyr)
 library(ggplot2)</code></pre>
 </div>
-<div id="population-data" class="section level2">
-<h2>Population Data</h2>
-<p>Sample Size</p>
-<pre class="r"><code>n &lt;- 1000</code></pre>
-<p>Configure pseudo-random number generator and define group probability</p>
+<div id="population" class="section level2">
+<h2>Population</h2>
+<p>Data set with <span class="math inline">\(N\)</span> members, containing a numeric variable.</p>
+<pre class="r"><code>N &lt;- 1000</code></pre>
+<p>The numeric variable (mass) are distributed normally with population mean (<span class="math inline">\(\mu\)</span>) and standard deviation (<span class="math inline">\(\sigma\)</span>)</p>
+<pre class="r"><code>mass.mean &lt;- 100
+mass.sd &lt;- 10</code></pre>
+<p>Generate Data Set</p>
 <pre class="r"><code>set.seed(12)
-group_probability &lt;- c(0.479,0.521)</code></pre>
+population &lt;- data.frame(Mass = rnorm(N, mass.mean, mass.sd))</code></pre>
 <blockquote>
-<p>Note: group probabilities are used to mimic the number of samples included in each group, as observed in youtube</p>
+<p>Note: configure pseudo-random number generator for reproducibility using seed(x)</p>
 </blockquote>
-<p>Define parameters used for data generation</p>
-<pre class="r"><code>groups &lt;- c(&#39;I&#39;,&#39;II&#39;)
-mass_mean &lt;- 100
-mass_sd &lt;- 10</code></pre>
-<p>Generate population data set</p>
-<pre class="r"><code>df &lt;- data.frame(
-  ID = 1:n,
-  Group = replicate(n,sample(groups,size = 1, prob = group_probability)),
-  Mass = rnorm(n, mass_mean, mass_sd))</code></pre>
+<p>Extract numeric variable from population as vector</p>
+<pre class="r"><code>mass &lt;- population[[&#39;Mass&#39;]]</code></pre>
 </div>
-<div id="sample-data-sets" class="section level2">
-<h2>Sample Data Sets</h2>
-<p>Extract two sample data sets from population based on group</p>
-<pre class="r"><code>group_I &lt;- df |&gt; filter(Group == &#39;I&#39;)
-group_II &lt;- df |&gt; filter(Group == &#39;II&#39;)</code></pre>
-<p>Extract Vectors from sample data sets</p>
-<pre class="r"><code>mass &lt;- df[[&#39;Mass&#39;]]
-
-mass_I &lt;- group_I[[&#39;Mass&#39;]]
-mass_II &lt;- group_II[[&#39;Mass&#39;]]
-
-n_I &lt;- length(mass_I)
-n_II &lt;- length(mass_II)</code></pre>
-</div>
-<div id="descriptive-statistics" class="section level2">
-<h2>Descriptive Statistics</h2>
-<div id="sample-data-set-i" class="section level3">
-<h3>Sample Data Set I</h3>
-<pre class="r"><code>summary(mass_I)</code></pre>
+<div id="samples" class="section level2">
+<h2>Samples</h2>
+<p>Define groups</p>
+<pre class="r"><code>group &lt;- c(&#39;I&#39;,&#39;II&#39;)</code></pre>
+<p>Randomly assign group identifier to each population member</p>
+<pre class="r"><code>group_probability &lt;- c(0.479,0.521)
+population[[&#39;Group&#39;]] &lt;- replicate(N,sample(group,size = 1, prob = group_probability))</code></pre>
+<blockquote>
+<p>Note: group probabilities are used to mimic the number of observations included in each sample set, as observered in tutorial</p>
+</blockquote>
+<p>Extract Sample Sets</p>
+<pre class="r"><code>group.I &lt;- population |&gt; filter(Group == &#39;I&#39;)
+group.II &lt;- population |&gt; filter(Group == &#39;II&#39;)</code></pre>
+<p>Extract numerical variable from sample sets as vector</p>
+<pre class="r"><code>mass.I &lt;- group.I[[&#39;Mass&#39;]]
+mass.II &lt;- group.II[[&#39;Mass&#39;]]</code></pre>
+<div id="descriptive-statistics" class="section level3">
+<h3>Descriptive Statistics</h3>
+<p>Get number observations (<span class="math inline">\(n\)</span>) in each sample set</p>
+<pre class="r"><code>n.I &lt;- length(mass.I)</code></pre>
+<p><span class="math inline">\(n_I = 504\)</span></p>
+<pre class="r"><code>n.II &lt;- length(mass.II)</code></pre>
+<p><span class="math inline">\(n_{II} = 496\)</span></p>
+<p>Get summary stats of each sample set</p>
+<pre class="r"><code>summary(mass.I)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##   73.35   93.39  100.44  100.50  107.34  131.92</code></pre>
-</div>
-<div id="sample-data-ii" class="section level3">
-<h3>Sample Data II</h3>
-<pre class="r"><code>summary(mass_II)</code></pre>
+##   69.54   93.08   99.43   99.43  106.07  131.07</code></pre>
+<pre class="r"><code>summary(mass.II)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##   69.54   93.15   99.69   99.58  105.55  129.38</code></pre>
+##   70.14   93.94   99.80  100.05  105.29  129.38</code></pre>
 </div>
-</div>
-<div id="data-visualization" class="section level2">
-<h2>Data Visualization</h2>
-<p>Plot histogram of both sample data sets overlayd on top of each other</p>
-<pre class="r"><code>ggplot(df, aes(
+<div id="data-visualization" class="section level3">
+<h3>Data Visualization</h3>
+<p>Plot histogram of sample data sets overlaid on top of each other</p>
+<pre class="r"><code>ggplot(population, aes(
   x=Mass, 
   fill=Group)) + 
   geom_histogram(
     position = &quot;identity&quot;,
     alpha=0.5, 
     bins = 30)</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
 </div>
-<div id="difference-in-means-test-statistic" class="section level2">
-<h2>Difference in means (test statistic)</h2>
-<pre class="r"><code>difference_in_means &lt;- mean(mass_I) - mean(mass_II)</code></pre>
-</div>
-<div id="reassignment-under-the-null-hypothesis" class="section level2">
-<h2>Reassignment under the null hypothesis</h2>
-<p>Use random samples extracted from the population data set to generate an entire spectrum of differences between mean values</p>
+<div id="delta-between-samples-means" class="section level3">
+<h3>Delta between samples means</h3>
+<p>Calculate and display difference between sample means</p>
+<pre class="r"><code>delta_means &lt;- abs(mean(mass.I) - mean(mass.II))</code></pre>
+<p><span class="math inline">\(\Delta\bar{X} = 0.623\)</span></p>
+<p>Use random pairwise samples extracted from the population data set to generate a spectrum of possible differences between sample means</p>
 <pre class="r"><code>means &lt;- c()
 resamples &lt;- 5000
 
 for (i in 1:resamples ) {
-  shuffled_mass &lt;- sample(mass)
-  new_group_I &lt;- shuffled_mass[1:n_I]
-  new_group_II &lt;- shuffled_mass[(n_I + 1):n]
-  new_difference_in_means = mean(new_group_I) - mean(new_group_II)
-  means &lt;- means |&gt; append(new_difference_in_means)
+  mass.shuffled &lt;- sample(mass)
+  group.I.new &lt;- mass.shuffled[1:n.I]
+  group.II.new &lt;- mass.shuffled[(n.I + 1):N]
+  delta_means.new = mean(group.I.new) - mean(group.II.new)
+  means &lt;- means |&gt; append(delta_means.new)
 }</code></pre>
-<p>Plot spectrum of differences between mean values</p>
+<p>Plot a histogram of resampled differences between sample means</p>
 <pre class="r"><code>ggplot(mapping = aes(means)) + 
   geom_histogram(
     position = &quot;identity&quot;,
     alpha=0.5, 
     bins = 30)</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 </div>
-<div id="probablity-of-difference-in-means" class="section level2">
-<h2>Probablity of difference in means</h2>
-<p>p-value of the difference between the two mean values of <strong>mass_I</strong> and <strong>mass_II</strong> sample data sets ### Manually calculated</p>
-<pre class="r"><code>qty_smaller_than_difference &lt;- length(means[means &lt; -difference_in_means])
-qty_bigger_than_difference &lt;- length(means[means &gt; difference_in_means])
-
-p_value.manual &lt;- (qty_smaller_than_difference + qty_bigger_than_difference) / resamples
-print(round(p_value.manual,4))</code></pre>
-<pre><code>## [1] 0.1476</code></pre>
-<div id="calculated-using-equal-variance-t-test-function" class="section level3">
-<h3>Calculated using Equal Variance T-Test function</h3>
-<pre class="r"><code>p_value.package &lt;- t.test(mass_I, mass_II, alternative = &quot;two.sided&quot;, var.equal = FALSE)[[&#39;p.value&#39;]]
-print(round(p_value.package,4))</code></pre>
-<pre><code>## [1] 0.1492</code></pre>
-</div>
+<div id="probablity-of-difference-between-sample-means" class="section level3">
+<h3>Probablity of difference between sample means</h3>
+<p>Manually calculate p-value of the difference between the two sample means</p>
+<pre class="r"><code>p_value.manual &lt;- (length(means[means &lt; -delta_means]) + length(means[means &gt; delta_means])) / resamples</code></pre>
+<p>p-value <span class="math inline">\(= 0.304\)</span></p>
+<p>Use t.test() function to calculate p-value of the difference between the two sample means</p>
+<pre class="r"><code>p_value.package &lt;- t.test(mass.I, mass.II, alternative = &quot;two.sided&quot;, var.equal = FALSE)[[&#39;p.value&#39;]]</code></pre>
+<p>p-value <span class="math inline">\(= 0.304\)</span></p>
 </div>
 </div>
 

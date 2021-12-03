@@ -13,25 +13,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-> **Note:** this code is a direct copy of Dr Juan Klopper youtube video ([link](https://www.youtube.com/watch?v=XRrx95pc_Pw)) and intended for educational purposes only. Obvious and notable differences includes code written in R.
+> **Note:** This article is based on a youtube video tutorial made by [Dr Juan Klopper](https://www.linkedin.com/in/juanklopper/). In the [tutorial](https://www.youtube.com/watch?v=XRrx95pc_Pw) Juan illustrate how one can estimate a p-value for the difference in means between two groups using **Julia**.  Obvious and notable differences in this post includes code written in R.
 
 TODO: Added math equations, additional information and update aesthetics.
-
-
-# Resampling under the null hypothesis
-
-## In this tutiorial
-
-- Seeding the pseudo-random number generator for reproducible results
-- Creating a Dataframe
-- Sample from a set of categorical values using sample function
-- Sample from a normal distribution using rnorm function
-- Making sub-DataFrames using the filter function (conditional selection)
-- Extracting vectors from DataFrames using dplyr
-- Summary statistics of a continuous numerical variable using summary function
-- Histogram using ggplot
-- Shuffle a vector sample function
-- Calculate a p-value using t.test function
 
 ## Packages
 
@@ -40,70 +24,97 @@ library(dplyr)
 library(ggplot2)
 ```
 
-## Population Data
+## Population
+Data set with $N$ members, containing a numeric variable.
 
-Sample Size
 ```{r}
-n <- 1000
+N <- 1000
 ```
 
-Configure pseudo-random number generator and define group probability
+The numeric variable (mass) are distributed normally with population mean ($\mu$) and standard deviation ($\sigma$)
+
+```{r}
+mass.mean <- 100
+mass.sd <- 10
+```
+
+Generate Data Set
+
 ```{r}
 set.seed(12)
+population <- data.frame(Mass = rnorm(N, mass.mean, mass.sd))
+```
+
+> Note: configure pseudo-random number generator for reproducibility using seed(x)
+
+Extract numeric variable from population as vector
+
+```{r}
+mass <- population[['Mass']]
+```
+
+## Samples
+
+Define groups
+
+```{r}
+group <- c('I','II')
+```
+
+Randomly assign group identifier to each population member
+
+```{r}
 group_probability <- c(0.479,0.521)
-```
-> Note: group probabilities are used to mimic the number of samples included in each group, as observed in youtube
-
-Define parameters used for data generation
-```{r}
-groups <- c('I','II')
-mass_mean <- 100
-mass_sd <- 10
+population[['Group']] <- replicate(N,sample(group,size = 1, prob = group_probability))
 ```
 
-Generate population data set
-```{r}
-df <- data.frame(
-  ID = 1:n,
-  Group = replicate(n,sample(groups,size = 1, prob = group_probability)),
-  Mass = rnorm(n, mass_mean, mass_sd))
+> Note: group probabilities are used to mimic the number of observations included in each sample set, as observered in tutorial
 
+Extract Sample Sets
+
+```{r}
+group.I <- population |> filter(Group == 'I')
+group.II <- population |> filter(Group == 'II')
 ```
 
-## Sample Data Sets
+Extract numerical variable from sample sets as vector
 
-Extract two sample data sets from population based on group
 ```{r}
-group_I <- df |> filter(Group == 'I')
-group_II <- df |> filter(Group == 'II')
+mass.I <- group.I[['Mass']]
+mass.II <- group.II[['Mass']]
 ```
 
-Extract Vectors from sample data sets 
+### Descriptive Statistics
+
+Get number observations ($n$) in each sample set
+
 ```{r}
-mass <- df[['Mass']]
-
-mass_I <- group_I[['Mass']]
-mass_II <- group_II[['Mass']]
-
-n_I <- length(mass_I)
-n_II <- length(mass_II)
+n.I <- length(mass.I)
 ```
 
+$n_I = `r n.I`$
 
-## Descriptive Statistics
-### Sample Data Set I
 ```{r}
-summary(mass_I)
-```
-### Sample Data II
-```{r}
-summary(mass_II)
+n.II <- length(mass.II)
 ```
 
-## Data Visualization
-Plot histogram of both sample data sets overlayd on top of each other
+$n_{II} = `r n.II`$
+
+Get summary stats of each sample set
+
 ```{r}
-ggplot(df, aes(
+summary(mass.I)
+```
+```{r}
+summary(mass.II)
+```
+
+### Data Visualization
+
+Plot histogram of sample data sets overlaid on top of each other
+
+```{r}
+ggplot(population, aes(
   x=Mass, 
   fill=Group)) + 
   geom_histogram(
@@ -112,27 +123,33 @@ ggplot(df, aes(
     bins = 30)
 ```
 
-## Difference in means (test statistic)
+### Delta between samples means
+
+Calculate and display difference between sample means
+
 ```{r}
-difference_in_means <- mean(mass_I) - mean(mass_II)
+delta_means <- abs(mean(mass.I) - mean(mass.II))
 ```
 
-## Reassignment under the null hypothesis
-Use random samples extracted from the population data set to generate an entire spectrum of differences between mean values 
+$\Delta\bar{X} = `r round(delta_means,3)`$
+
+Use random pairwise samples extracted from the population data set to generate a spectrum of possible differences between sample means
+
 ```{r}
 means <- c()
 resamples <- 5000
 
 for (i in 1:resamples ) {
-  shuffled_mass <- sample(mass)
-  new_group_I <- shuffled_mass[1:n_I]
-  new_group_II <- shuffled_mass[(n_I + 1):n]
-  new_difference_in_means = mean(new_group_I) - mean(new_group_II)
-  means <- means |> append(new_difference_in_means)
+  mass.shuffled <- sample(mass)
+  group.I.new <- mass.shuffled[1:n.I]
+  group.II.new <- mass.shuffled[(n.I + 1):N]
+  delta_means.new = mean(group.I.new) - mean(group.II.new)
+  means <- means |> append(delta_means.new)
 }
 ```
 
-Plot spectrum of differences between mean values
+Plot a histogram of resampled differences between sample means
+
 ```{r}
 ggplot(mapping = aes(means)) + 
   geom_histogram(
@@ -141,20 +158,21 @@ ggplot(mapping = aes(means)) +
     bins = 30)
 ```
 
-## Probablity of difference in means
-p-value of the difference between the two mean values of **mass_I** and **mass_II** sample data sets
-### Manually calculated
-```{r}
-qty_smaller_than_difference <- length(means[means < -difference_in_means])
-qty_bigger_than_difference <- length(means[means > difference_in_means])
 
-p_value.manual <- (qty_smaller_than_difference + qty_bigger_than_difference) / resamples
-print(round(p_value.manual,4))
+### Probablity of difference between sample means
+
+Manually calculate p-value of the difference between the two sample means
+
+```{r}
+p_value.manual <- (length(means[means < -delta_means]) + length(means[means > delta_means])) / resamples
 ```
 
-### Calculated using Equal Variance T-Test function
+p-value $= `r round(p_value.manual,3)`$
+
+Use t.test() function to calculate p-value of the difference between the two sample means
+
 ```{r}
-p_value.package <- t.test(mass_I, mass_II, alternative = "two.sided", var.equal = FALSE)[['p.value']]
-print(round(p_value.package,4))
+p_value.package <- t.test(mass.I, mass.II, alternative = "two.sided", var.equal = FALSE)[['p.value']]
 ```
 
+p-value $= `r round(p_value.package,3)`$
