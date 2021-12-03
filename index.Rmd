@@ -50,7 +50,7 @@ Configure pseudo-random number generator and define group probability
 set.seed(12)
 group_probability <- c(0.479,0.521)
 ```
-> Note: group probability used to mimic the number of samples included in each group, as observed in youtube
+> Note: group probabilities are used to mimic the number of samples included in each group, as observed in youtube
 
 Define parameters used for data generation
 ```{r}
@@ -75,6 +75,58 @@ group_I <- df |> filter(Group == 'I')
 group_II <- df |> filter(Group == 'II')
 ```
 
-Extract Vectors for each 
+Extract Vectors from dataframe 
 
-$\sum_{n=1}^{10} n^2$
+```{r}
+mass <- df[['Mass']]
+
+mass_I <- group_I[['Mass']]
+mass_II <- group_II[['Mass']]
+
+n_I <- length(mass_I)
+n_II <- length(mass_II)
+```
+
+
+## Descriptive Statistics
+### Sample I
+
+```{r}
+summary(mass_I)
+```
+### Sample II
+```{r}
+summary(mass_II)
+```
+
+## Data Visualization
+
+```{r}
+ggplot(df, aes(
+  x=Mass, 
+  fill=Group)) + 
+  geom_histogram(
+    position = "identity",
+    alpha=0.5, 
+    bins = 30)
+```
+
+## Difference in means (test statistic)
+```{r}
+difference_in_means = mean(mass_I) - mean(mass_II)
+```
+
+## Reassignment under the null hypothesis
+
+```{r}
+means <- c()
+resamples = 3
+
+for (i in 1:resamples ) {
+  
+  print(i)
+}
+```
+
+
+
