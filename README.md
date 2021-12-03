@@ -1,2 +1,1 @@
-# difference_between_means
-Estimating a p value for the differenve in means between two groups
+See project [website](https://flippiecoetser.github.io/difference_between_means/)

@@ -13,7 +13,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-> **Note:** this code is a direct copy of Dr Juan Klopper youtube video ( [link](https://www.youtube.com/watch?v=XRrx95pc_Pw)) and intended for educational purposes only. Obvious and notable differences includes code written in R and added math equations.
+> **Note:** this code is a direct copy of Dr Juan Klopper youtube video ([link](https://www.youtube.com/watch?v=XRrx95pc_Pw)) and intended for educational purposes only. Obvious and notable differences includes code written in R and added math equations.
 
 
 # Resampling under the null hypothesis
