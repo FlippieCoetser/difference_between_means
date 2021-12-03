@@ -1,0 +1,79 @@
+---
+title: "Estimating a p value for the difference in means between two groups"
+author: "PJ Coetser"
+date: "12/3/2021"
+output:
+  html_document:
+    highlight: textmate
+    css: styles.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> **Note:** this code is a direct copy of Dr Juan Klopper youtube video ( [link](https://www.youtube.com/watch?v=XRrx95pc_Pw)) and intended for educational purposes only. Obvious and notable differences includes code written in R and added math equations.
+
+
+# Resampling under the null hypothesis
+
+## In this tutiorial
+
+- Seeding the pseudo-random number generator for reproducible results
+- Creating a Dataframe
+- Sample from a set of categorical values using  xxx
+- Sample from a normal distribution using xxx
+- Making sub-DataFrames using the filter function (conditional selection)
+- Extracting vectors from DataFrames
+- Summary statistics of a continuous numerical variable using xxx
+- Histogram using xxx
+- Shuffle a vector
+- Calculate a p-value using xxx
+
+## Packages
+
+```{r, message=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+## Population Data
+
+Sample Size
+```{r}
+n <- 1000
+```
+
+Configure pseudo-random number generator and define group probability
+```{r}
+set.seed(12)
+group_probability <- c(0.479,0.521)
+```
+> Note: group probability used to mimic the number of samples included in each group, as observed in youtube
+
+Define parameters used for data generation
+```{r}
+groups <- c('I','II')
+mass_mean <- 100
+mass_sd <- 10
+```
+
+Generate population data set
+```{r}
+df <- data.frame(
+  ID = 1:n,
+  Group = replicate(n,sample(groups,size = 1, prob = group_probability)),
+  Mass = rnorm(n, mass_mean, mass_sd))
+
+```
+
+## Sample Data Sets
+
+```{r}
+group_I <- df |> filter(Group == 'I')
+group_II <- df |> filter(Group == 'II')
+```
+
+Extract Vectors for each 
+
+$\sum_{n=1}^{10} n^2$
